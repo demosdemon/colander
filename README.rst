@@ -1,7 +1,7 @@
 Colander
 ========
 
-.. image:: https://travis-ci.org/Pylons/colander.svg?branch=master
+.. image:: https://travis-ci.com/demosdemon/colander.svg?branch=fork
         :target: https://travis-ci.org/Pylons/colander
 
 .. image:: https://readthedocs.org/projects/colander/badge/?version=master
