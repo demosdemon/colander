@@ -656,7 +656,7 @@ class SchemaType(object):
         if listitem:
             selfname = prefix
         else:
-            selfname = '%s%s' % (prefix, node.name)
+            selfname = '{}{}'.format(prefix, node.name)
         result[selfname.rstrip('.')] = appstruct
         return result
 
@@ -832,7 +832,7 @@ class Mapping(SchemaType):
             selfprefix = prefix
         else:
             if node.name:
-                selfprefix = '%s%s.' % (prefix, node.name)
+                selfprefix = '{}{}.'.format(prefix, node.name)
             else:
                 selfprefix = prefix
 
@@ -970,7 +970,7 @@ class Tuple(Positional, SchemaType):
         if listitem:
             selfprefix = prefix
         else:
-            selfprefix = '%s%s.' % (prefix, node.name)
+            selfprefix = '{}{}.'.format(prefix, node.name)
 
         for num, subnode in enumerate(node.children):
             substruct = appstruct[num]
@@ -1233,12 +1233,12 @@ class Sequence(Positional, SchemaType):
         if listitem:
             selfprefix = prefix
         else:
-            selfprefix = '%s%s.' % (prefix, node.name)
+            selfprefix = '{}{}.'.format(prefix, node.name)
 
         childnode = node.children[0]
 
         for num, subval in enumerate(appstruct):
-            subname = '%s%s' % (selfprefix, num)
+            subname = '{}{}'.format(selfprefix, num)
             subprefix = subname + '.'
             result.update(
                 childnode.typ.flatten(
@@ -1258,7 +1258,7 @@ class Sequence(Positional, SchemaType):
         def rewrite_subpath(subpath):
             if '.' in subpath:
                 suffix = subpath.split('.', 1)[1]
-                return '%s.%s' % (child_name, suffix)
+                return '{}.{}'.format(child_name, suffix)
             return child_name
 
         mapstruct = _unflatten_mapping(

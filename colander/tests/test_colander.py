@@ -1407,7 +1407,7 @@ class TestSet(unittest.TestCase):
         typ = self._makeOne()
         node = DummySchemaNode(typ)
         result = typ.deserialize(node, ('a',))
-        self.assertEqual(result, set(('a',)))
+        self.assertEqual(result, {'a'})
 
     def test_deserialize_empty_set(self):
         typ = self._makeOne()
@@ -2471,7 +2471,7 @@ class TestGlobalObject(unittest.TestCase):
             e = invalid_exc(typ.deserialize, node, name)
             self.assertEqual(
                 e.msg.interpolate(),
-                'The dotted name "{0}" cannot be imported'.format(name),
+                'The dotted name "{}" cannot be imported'.format(name),
             )
 
     def test_serialize_fail(self):
