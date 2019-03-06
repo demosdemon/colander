@@ -1,0 +1,29 @@
+version: 2.0
+
+jobs:
+  build:
+    docker:
+      - image: demosdemon/circleci-tox
+    steps:
+      - checkout
+      - restore_cache:
+          keys: 
+            - v2-toxenv-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
+            - v2-toxenv-{{ checksum "setup.py" }}-
+            - v2-toxenv-
+      - run:
+          name: Running test suite
+          command: |
+            tox
+            mkdir -p test-results/nosetests
+            mv nosetests-*.xml test-results/nosetests
+            mv .tox/log log
+      - save_cache:
+          key: v2-toxenv-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
+          paths:
+            - ~/.cache/pip
+            - .tox
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: log
