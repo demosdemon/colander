@@ -7,7 +7,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys: 
+          keys:
             - v2-toxenv-{{ checksum "setup.py" }}-{{ checksum "tox.ini" }}
             - v2-toxenv-{{ checksum "setup.py" }}-
             - v2-toxenv-
@@ -27,3 +27,6 @@ jobs:
           path: test-results
       - store_artifacts:
           path: log
+      - run:
+          name: Upload Code Coverage to Codecov.io
+          command: bash <(curl -s https://codecov.io/bash)
