@@ -2,13 +2,14 @@ graft colander
 graft docs
 prune docs/_build
 prune docs/.gitignore
+prune .circleci
 
 include README.rst CHANGES.rst
 include CONTRIBUTORS.txt LICENSE.txt COPYRIGHT.txt
 
 include .flake8 setup.cfg pyproject.toml
 include tox.ini .travis.yml rtd.txt
-include contributing.md RELEASING.txt TODO.txt
+include contributing.md RELEASING.txt TODO.txt CODEOWNERS
 graft .github
 
 global-exclude __pycache__ *.py[cod]
