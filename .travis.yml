@@ -1,36 +1,148 @@
 # Wire up travis
-language: python
-sudo: required
+language: generic
+sudo: true
 dist: xenial
-
-matrix:
-    include:
-        - python: 2.7
-          env: TOXENV=py27
-        - python: 3.5
-          env: TOXENV=py35
-        - python: 3.6
-          env: TOXENV=py36
-        - python: 3.7
-          env: TOXENV=py37
-        - python: 3.8-dev
-          env: TOXENV=py38
-        - python: pypy2.7-7.0.0
-          env: TOXENV=pypy
-        - python: pypy3.6-7.0.0
-          env: TOXENV=pypy3
-        - python: 3.7
-          env: TOXENV=docs
-        - python: 3.7
-          env: TOXENV=lint
-        - python: 3.7
-          env: TOXENV=py27-cover,py37-cover,coverage
-    allow_failures:
-        - python: 3.8-dev
 
 cache:
   directories:
     - $HOME/.cache/pip
+    - $HOME/.pyenv_cache
+
+before_install:
+  - |
+    if [[ "$VIRTUAL_ENV" ]]; then deactivate; fi
+
+    PYENV_REPO=https://github.com/pyenv/pyenv.git
+
+    PYENV_CACHE_PATH=${PYENV_CACHE_PATH:-${HOME}/.pyenv_cache}
+    mkdir -p "$PYENV_CACHE_PATH"
+
+    PYENV_ROOT=${PYENV_ROOT:-${HOME}/.pyenv}
+    export PYENV_ROOT
+    if [[ -d "$PYENV_ROOT/.git" ]]; then
+      git --git-dir "$PYENV_ROOT/.git" --work-tree "$PYENV_ROOT" pull origin master
+    else
+      git clone --depth 1 "$PYENV_REPO" "$PYENV_ROOT"
+    fi
+    export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
+
+    version_cache_path() {
+      local pyenv_version="$1"
+      if [[ -z "$pyenv_version" ]]; then return 1; fi
+      printf '%s/%s' "$PYENV_CACHE_PATH" "$pyenv_version"
+    }
+
+    version_pyenv_path() {
+      local pyenv_version="$1"
+      if [[ -z "$pyenv_version" ]]; then return 1; fi
+      printf '%s/versions/%s' "$PYENV_ROOT" "$pyenv_version"
+    }
+
+    verify_python() {
+      local python_bin="$1"
+      if [[ -z "$python_bin" ]]; then return 1; fi
+      "$python_bin" --version &>/dev/null
+    }
+
+    use_existing_python() {
+      local pyenv_version="$1"
+      if [[ -z "$pyenv_version" ]]; then return 1; fi
+
+      local version_pyenv_path="$(version_pyenv_path "$pyenv_version")"
+
+      if [[ -d "$version_pyenv_path" ]]; then
+        printf "Python %s already installed. Verifying..." "$pyenv_version"
+        if verify_python "$version_pyenv_path/bin/python"; then
+          printf 'success!\n'
+          return 0
+        else
+          printf 'FAILED.\nClearing installed version...'
+          rm -f "$version_pyenv_path"
+          printf 'done.\n'
+          return 1
+        fi
+      else
+        printf 'No existing python found.\n'
+        return 1
+      fi
+    }
+
+    use_cached_python() {
+      local pyenv_version="$1"
+      if [[ -z "$pyenv_version" ]]; then return 1; fi
+
+      local version_pyenv_path="$(version_pyenv_path "$pyenv_version")"
+      local version_cache_path="$(version_cache_path "$pyenv_version")"
+
+      if [[ -d "$version_cache_path" ]]; then
+        printf "Cached python found, %s. Verifying..." "$pyenv_version"
+        ln -s "$version_cache_path" "$version_pyenv_path"
+        if verify_python "$version_pyenv_path/bin/python"; then
+          printf 'success!\n'
+          return 0
+        else
+          printf 'FAILED.\nClearing cached version...'
+          rm -f "$version_pyenv_path"
+          rm -rf "$version_cache_path"
+          printf 'done.\n'
+          return 1
+        fi
+      else
+        printf 'No cached python found.'
+        return 1
+      fi
+    }
+
+    main() {
+      local pyenv_version="$1"
+      if [[ -z "$pyenv_version" ]]; then
+        echo 'pyenv_version not provided!' >&2
+        return 1
+      fi
+
+      printf -- '**** Trying to find and use cached %s.\n' "$pyenv_version"
+      if ! use_existing_python "$pyenv_version" && ! use_cached_python "$pyenv_version"; then
+        printf -- '**** Installing python %s with pyenv now.\n' "$pyenv_version"
+        if pyenv install "$pyenv_version"; then
+          if mv "$(version_pyenv_path "$pyenv_version")" "$PYENV_CACHE_PATH"; then
+            printf -- 'Python was successfully built and moved to cache.\n'
+            printf -- '**** Trying to find and use cached python %s.\n' "$pyenv_version"
+            if ! use_cached_python "$pyenv_version"; then
+              printf -- 'Python version %s was apparently successfully built,\n' "$pyenv_version"
+              printf -- 'with pyenv, but, once cached, it could not be verified.\n'
+              return 1
+            fi
+          else
+            printf -- '**** Warning: Python was succesfully built, but moving to cache\n'
+            printf -- 'failed. Proceeding anyway without caching.\n'
+          fi
+        else
+          printf -- 'Python version %s build FAILED.\n' "$pyenv_version"
+          return 1
+        fi
+      fi
+    }
+
+    python_versions=(
+      3.7.2
+      3.6.8
+      3.5.6
+      2.7.16
+      3.8-dev
+      pypy2.7-7.0.0
+      pypy3.6-7.0.0
+    )
+
+    echo -n > "$PYENV_ROOT/version"
+    for version in "${python_versions[@]}"; do
+      if main "$version"; then
+        echo "$version" >> "$PYENV_ROOT/version"
+      else
+        exit 1
+      fi
+    done
+
+    pyenv versions
 
 install:
   - travis_retry pip install tox

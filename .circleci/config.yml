@@ -5,6 +5,7 @@ jobs:
     docker:
       - image: demosdemon/circleci-tox
     steps:
+      - run: pyenv versions
       - checkout
       - restore_cache:
           keys:
