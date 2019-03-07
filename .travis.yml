@@ -88,7 +88,7 @@ before_install:
           return 1
         fi
       else
-        printf 'No cached python found.'
+        printf 'No cached python found.\n'
         return 1
       fi
     }
