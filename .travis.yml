@@ -3,6 +3,12 @@ language: generic
 sudo: true
 dist: xenial
 
+branches:
+  only:
+    - master
+    - fork
+    - /^test/
+
 cache:
   directories:
     - $HOME/.cache/pip
